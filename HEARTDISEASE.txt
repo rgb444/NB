@@ -1,0 +1,114 @@
+# Import necessary libraries
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# === Step 1: Load the dataset ===
+# Load the heart disease dataset (adjust path if necessary)
+df = pd.read_csv('heart_disease_prediction.csv')  # Update path to your CSV file
+
+# Display the first few rows of the dataset
+print("=== First few rows of the dataset ===")
+print(df.head())
+
+# Check dataset info to identify missing values and data types
+print("\n=== Dataset Info ===")
+df.info()
+
+# === Step 2: Exploratory Data Analysis (EDA) ===
+# Check for missing values
+print("\n=== Missing Values ===")
+print(df.isnull().sum())  # Display count of missing values per column
+
+# Basic statistics (e.g., mean, median, min, max) for numerical features
+print("\n=== Summary Statistics ===")
+print(df.describe())
+
+# Correlation matrix for numerical columns
+print("\n=== Correlation Matrix ===")
+corr = df.corr()
+plt.figure(figsize=(10, 8))
+sns.heatmap(corr, annot=True, cmap='coolwarm', fmt='.2f')
+plt.title('Correlation Matrix')
+plt.show()
+
+# Visualize distribution of the target variable (Heart Disease)
+sns.countplot(data=df, x='Heart Disease')
+plt.title('Heart Disease Distribution (0: Absence, 1: Presence)')
+plt.show()
+
+# === Step 3: Data Preprocessing ===
+# Drop rows with missing values (if any)
+df = df.dropna()
+
+# Check if any missing values remain
+print("\n=== Missing Values After Dropping ===")
+print(df.isnull().sum())
+
+# Encode categorical target labels: 'Presence' => 1, 'Absence' => 0
+# Assuming 'Heart Disease' is the target column and contains categorical values (e.g., 'Presence' and 'Absence')
+le_target = LabelEncoder()
+df['Heart Disease'] = le_target.fit_transform(df['Heart Disease'])
+print(f"Target label encoding: {dict(zip(le_target.classes_, le_target.transform(le_target.classes_)))}")
+
+# === Step 4: Feature Selection ===
+# Separate features (X) and target (y)
+X = df.drop('Heart Disease', axis=1)  # All columns except 'Heart Disease'
+y = df['Heart Disease']  # Target variable (Heart Disease presence)
+
+# === Step 5: Train-Test Split ===
+# Split the data into training and testing sets (80% train, 20% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# === Step 6: Feature Scaling === (optional but can improve performance for some algorithms)
+# Apply Standard Scaling (Z-score normalization) to the features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# === Step 7: Model Training ===
+# Initialize the Gaussian Naive Bayes classifier
+model = GaussianNB()
+
+# Train the model on the scaled training data
+model.fit(X_train_scaled, y_train)
+
+# === Step 8: Predictions ===
+# Make predictions on the test set
+y_pred = model.predict(X_test_scaled)
+
+# === Step 9: Model Evaluation ===
+# Evaluate the model's performance using various metrics
+print("\n=== Model Evaluation ===")
+
+# Confusion Matrix
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+# Classification Report (Precision, Recall, F1-score, etc.)
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# Accuracy score
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.4f}")
+
+# === Step 10: Visualization ===
+# Plot the confusion matrix as a heatmap
+cm = confusion_matrix(y_test, y_pred)
+labels = ['Absence', 'Presence']
+
+# Confusion Matrix heatmap
+plt.figure(figsize=(6, 5))
+sns.heatmap(cm, annot=True, fmt='d', cmap='YlGnBu', xticklabels=labels, yticklabels=labels)
+plt.title('Heart Disease Prediction - Confusion Matrix')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.show()
+
+# Optional: Feature importance visualization (for Tree-based models only, not applicable here)
+# For GaussianNB, feature importance is not directly available, but other models like Random Forest or XGBoost can be used for this.
