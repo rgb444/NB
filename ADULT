@@ -1,0 +1,118 @@
+# Import necessary libraries
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# === Step 1: Load the dataset ===
+# Load the adult income dataset (adjust path if necessary)
+df = pd.read_csv('adult.csv')  # Update path to your CSV file
+
+# Display the first few rows of the dataset
+print("=== First few rows of the dataset ===")
+print(df.head())
+
+# === Step 2: Initial Exploratory Data Analysis (EDA) ===
+
+# Check dataset info to identify data types and missing values
+print("\n=== Dataset Info ===")
+df.info()
+
+# Check for missing values
+print("\n=== Missing Values ===")
+print(df.isnull().sum())  # Count of missing values for each column
+
+# Replace '?' with NaN (missing values) and drop rows with missing values
+df = df.replace('?', pd.NA)
+
+# Visualize missing data after replacement
+print("\n=== Missing Values After Cleaning ===")
+print(df.isnull().sum())
+
+# Summary statistics for numerical columns (mean, std, min, max, etc.)
+print("\n=== Summary Statistics ===")
+print(df.describe())
+
+# Visualize distribution of numerical features (e.g., age, hours per week, etc.)
+numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns
+df[numerical_cols].hist(bins=20, figsize=(12, 10))
+plt.suptitle('Distribution of Numerical Features')
+plt.show()
+
+# Visualize distribution of categorical features (e.g., education, workclass, etc.)
+categorical_cols = df.select_dtypes(include=['object']).columns
+for col in categorical_cols:
+    plt.figure(figsize=(8, 6))
+    sns.countplot(data=df, x=col)
+    plt.title(f'Distribution of {col}')
+    plt.xticks(rotation=45)
+    plt.show()
+
+# Visualizing the target variable 'income' distribution (<=50K vs >50K)
+plt.figure(figsize=(8, 6))
+sns.countplot(data=df, x='income')
+plt.title('Income Distribution (<=50K vs >50K)')
+plt.xticks(ticks=[0, 1], labels=['<=50K', '>50K'])
+plt.show()
+
+# === Step 3: Data Preprocessing ===
+
+# Replace '?' with NaN and drop rows with any missing values
+df = df.dropna()
+
+# Encode categorical columns using Label Encoding
+label_encoders = {}
+for col in df.select_dtypes(include='object').columns:
+    le = LabelEncoder()
+    df[col] = le.fit_transform(df[col])
+    label_encoders[col] = le
+
+# === Step 4: Features and Target Variable ===
+# 'income' is usually the target column, so we separate features (X) and target (y)
+X = df.drop('income', axis=1)  # All columns except 'income'
+y = df['income']  # Target variable (income, whether >50K or <=50K)
+
+# === Step 5: Train-Test Split ===
+# Split the data into training and testing sets (80% train, 20% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# === Step 6: Train the Naive Bayes Model ===
+# Initialize the Gaussian Naive Bayes classifier
+model = GaussianNB()
+
+# Train the model using the training data
+model.fit(X_train, y_train)
+
+# === Step 7: Make Predictions ===
+# Use the trained model to make predictions on the test set
+y_pred = model.predict(X_test)
+
+# === Step 8: Model Evaluation ===
+# Print the confusion matrix
+print("\n=== Model Evaluation ===")
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("0 => <=50K\n1 => >50K\n")
+
+# Classification report with precision, recall, and F1-score
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# Accuracy score
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.4f}")
+
+# === Step 9: Visualization ===
+# Plot the confusion matrix as a heatmap
+cm = confusion_matrix(y_test, y_pred)
+labels = ['<=50K', '>50K']
+
+# Confusion Matrix heatmap
+plt.figure(figsize=(6, 5))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels)
+plt.title('Adult Income Prediction - Confusion Matrix')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.show()
